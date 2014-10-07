@@ -1,0 +1,87 @@
+<?xml version="1.0"?>
+<project name="rkawa" default="default" basedir=".">
+  <!-- Give the user a chance to override the defaults. -->
+  <property file="build.properties"/>
+
+  <property name="debug" value="true"/>
+  <property name="deprecation" value="false"/>
+  <property name="optimize" value="true"/>
+
+  <property name="kawa.jar" value="${basedir}/../../lib/kawa.jar"/>
+  <property name="tools.jar" value="${basedir}/../../lib/kawa-tools.jar"/>
+
+  <property name="dist" value="rkawa"/>
+
+  <property name="src.dir" value="${basedir}/src/main/scheme"/>
+  <property name="build.classes" value="${basedir}/classes"/>
+  <property name="jar.name" value="${dist}.jar"/>
+  <property name="uberjar.name" value="${dist}-standalone.jar"/>
+
+  <path id="libpath">
+    <pathelement path="${kawa.jar}"/>
+    <pathelement path="${basedir}/jri/JRI.jar"/>
+    <pathelement path="${basedir}/jri/REngine.jar"/>
+    <pathelement path="${basedir}/jri/JRIEngine.jar"/>
+  </path>
+
+  <taskdef name="xcopy"
+           classname="gnu.kawa.ant.XCopy"
+           classpath="${tools.jar}"/>
+  <taskdef name="kawac"
+           classname="gnu.kawa.ant.Kawac"
+           classpath="${tools.jar}"/>
+
+  <target name="default" depends="all"/>
+
+  <target name="all" depends="jar"/>
+
+  <target name="init">
+    <mkdir dir="${build.classes}"/>
+  </target>
+
+  <target name="do-compile" depends="init">
+    <kawac failonerror="true"
+           classpathref="libpath"
+           destdir="${build.classes}"
+           prefix=""
+           modulestatic="run"
+           language="scheme">
+      <arg line="--warn-undefined-variable --warn-unknown-member"/>
+      <fileset dir="${src.dir}">
+        <include name="**/*.scm"/>
+      </fileset>
+    </kawac>
+  </target>
+
+  <target name="compile" depends="do-compile"/>
+
+  <target name="jar" depends="compile">
+    <jar jarfile="${jar.name}">
+      <fileset dir="${build.classes}">
+      </fileset>
+    </jar>
+  </target>
+
+  <target name="uberjar" depends="jar">
+    <jar jarfile="${uberjar.name}">
+      <fileset dir="${build.classes}">
+      </fileset>
+      <zipfileset excludes="META-INF/*.SF" src="${kawa.jar}"/>
+      <zipfileset excludes="META-INF/*.SF" src="${basedir}/jri/JRI.jar"/>
+      <zipfileset excludes="META-INF/*.SF" src="${basedir}/jri/REngine.jar"/>
+      <zipfileset excludes="META-INF/*.SF" src="${basedir}/jri/JRIEngine.jar"/>
+    </jar>
+  </target>
+
+  <target name="clean-build">
+    <delete dir="${build.classes}"/>
+  </target>
+
+  <target name="clean-jar">
+    <delete file="${jar.name}"/>
+    <delete file="${uberjar.name}"/>
+  </target>
+
+  <target name="clean" depends="clean-build, clean-jar"/>
+
+</project>
