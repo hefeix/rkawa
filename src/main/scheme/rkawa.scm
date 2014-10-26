@@ -49,7 +49,7 @@
          (length (value:length)))
     (if (= length 1)
         (bools 0)
-        bools)))
+        (jarray->vector bools))))
 
 (define (r-integer->scheme rexp ::REXP)
   (let* ((value (->REXPInteger rexp))
@@ -73,20 +73,29 @@
         (jarray->vector (value:asStrings)))))
 
 (define (r-symbol->scheme rexp ::REXP)
-  #!null)
+  (let* ((value (->REXPSymbol rexp))
+         (length (value:length)))
+    (if (= length 1)
+        (value:asString)
+        (jarray->vector (value:asStrings)))))
 
 (define (r-complex->scheme rexp ::REXP)
-  (r-numeric->scheme rexp))
+  (throw (IllegalArgumentException "r-comple->scheme no conversion rules")))
 
 (define (r-vector->scheme rexp ::REXP)
-  (jarray->vector (rexp:asDoubles)))
+  (let* ((n (rexp:length))
+         (rlist (rexp:asList))
+         (result (make-vector n)))
+    (do ((i ::int 0 (+ i 1)))
+        ((>= i n) result)
+      (vector-set! result i (r->scheme (rlist:at i))))))
 
 (define (r-list->scheme rexp ::REXP)
   (let* ((n (rexp:length))
          (rlist (rexp:asList))
          (result (make-vector n)))
     (do ((i ::int 0 (+ i 1)))
-        ((>= i length) (vector->list result))
+        ((>= i n) (vector->list result))
       (vector-set! result i (r->scheme (rlist:at i))))))
 
 (define (r->scheme rexp ::REXP)
@@ -260,6 +269,10 @@
 (define (r expr)
   (r->scheme (r% expr)))
 
+;; Eval expresion in the R engine. Wrap the return value in print
+(define (r* expr)
+  (r &{capture.output(&[expr])}))
+
 ;; Eval expression in the R engine. Will not catch any exceptions that
 ;; happen during evaluation
 (define (r-eval-no-catch expr ::String)
@@ -324,10 +337,11 @@
 
 ;;----------------------------------------------------------------------
 ;; Assign r-name to val within the R engine
-(define (r/set! name ::String value ::REXP)
-  (let ((r (get-jri-engine)))
+(define (r/set! name ::String value)
+  (let ((r (get-jri-engine))
+        (rexp (scheme->r value)))
     (try-catch
-      (r:assign name value)
+      (r:assign name rexp)
       (exn REngineException
         (format #t "Caught exception assigning R value: ~A~%~A~%" name exn)))))
 
@@ -339,6 +353,11 @@
 ;; Retrieve the value with this name in the R engine
 (define (r/get name)
   (r name))
+
+;;----------------------------------------------------------------------
+
+(define (r/attrs rexp ::REXP)
+  #!null)
 
 ;;----------------------------------------------------------------------
 
