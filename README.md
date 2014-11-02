@@ -1,6 +1,6 @@
 rkawa
-====
-R in Kawa scheme implementations
+=====
+R in Kawa scheme implementation.
 
 reference
 =========

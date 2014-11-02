@@ -1,10 +1,13 @@
 ;;----------------------------------------------------------------------
+;;;; Embed R in kawa scheme implementation, using rJava/JRI.
 
 (define-alias Exception java.lang.Exception)
 (define-alias IllegalArgumentException java.lang.IllegalArgumentException)
 (define-alias IllegalStateException java.lang.IllegalStateException)
 (define-alias Object java.lang.Object)
 
+;; org.rosuda.JRI: Low level Java/R Interface
+;; org.rosuda.REngine: High level java interface to R
 (define-alias REXP org.rosuda.REngine.REXP)
 (define-alias REXPDouble org.rosuda.REngine.REXPDouble)
 (define-alias REXPEnvironment org.rosuda.REngine.REXPEnvironment)
@@ -356,19 +359,28 @@
 
 ;;----------------------------------------------------------------------
 
-(define (r/attrs rexp ::REXP)
-  #!null)
+(define (r/attrs value)
+  (define (attrs rexp ::REXP)
+    (let ((result (rexp:_attr)))
+      (if (eq? result #!null)
+          #!null
+          (r->scheme (rexp:_attr)))))
+
+  (cond
+    ((string? value) (attrs (r/get% value)))
+    ((REXP? value) (attrs value))
+    (else (throw (IllegalArgumentException "Invalid value = ~A~%" value)))))
 
 ;;----------------------------------------------------------------------
 
-(define (r/dev.on)
+(define (r/dev.on #!key (width 800) (height 600))
   (r &{library("JavaGD")
-       JavaGD()}))
+       JavaGD(width=&[width], height=&[height])}))
 
 (define (r/dev.off)
   (r &{graphics.off()}))
 
-(define (r/library library)
-  (r &{library("&[library]")}))
+(define (r/library library-name)
+  (r &{library("&[library-name]")}))
 
 ;;----------------------------------------------------------------------

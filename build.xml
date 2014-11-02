@@ -48,12 +48,27 @@
            language="scheme">
       <arg line="--warn-undefined-variable --warn-unknown-member"/>
       <fileset dir="${src.dir}">
-        <include name="**/*.scm"/>
+        <include name="**/rkawa.scm"/>
       </fileset>
     </kawac>
   </target>
 
-  <target name="compile" depends="do-compile"/>
+  <target name="do-compile-ext" depends="do-compile">
+    <kawac failonerror="true"
+           classpathref="libpath"
+           classpath="${build.classes}"
+           destdir="${build.classes}"
+           prefix=""
+           modulestatic="run"
+           language="scheme">
+      <arg line="--warn-undefined-variable --warn-unknown-member"/>
+      <fileset dir="${src.dir}">
+        <exclude name="**/rkawa.scm"/>
+      </fileset>
+    </kawac>
+  </target>
+
+  <target name="compile" depends="do-compile, do-compile-ext"/>
 
   <target name="jar" depends="compile">
     <jar jarfile="${jar.name}">
